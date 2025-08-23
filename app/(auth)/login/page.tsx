@@ -94,7 +94,7 @@ export default function LoginPage() {
         <CardHeader
           header={
             <div className={styles.header}>
-              <Text className={styles.title}>Welcome to WSS BugTracker</Text>
+              <Text className={styles.title}>Welcome to WSS Planner</Text>
               <Text>Sign in to your account</Text>
             </div>
           }

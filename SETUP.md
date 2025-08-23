@@ -1,4 +1,4 @@
-# WSS BugTracker Setup Guide
+# WSS Planner Setup Guide
 
 ## Quick Start
 
@@ -10,7 +10,7 @@
 2. **Environment Setup**
    Copy `.env.local` and configure MongoDB:
    ```env
-   MONGODB_URI=mongodb://localhost:27017/wss-bugtracker
+   MONGODB_URI=mongodb://localhost:27017/wss-planner
    NEXTAUTH_URL=http://localhost:3001
    NEXTAUTH_SECRET=your-secret-key-here
    ```

@@ -132,7 +132,7 @@ export default function DashboardLayout({ children, breadcrumbs = [] }: Dashboar
       <div className={`${styles.sidebar} ${sidebarCollapsed ? styles.sidebarCollapsed : ''}`}>
         <div className={styles.sidebarHeader}>
           <Hamburger onClick={() => setSidebarCollapsed(!sidebarCollapsed)} />
-          {!sidebarCollapsed && <div className={styles.logo}>WSS BugTracker</div>}
+          {!sidebarCollapsed && <div className={styles.logo}>WSS Planner</div>}
         </div>
 
         {!sidebarCollapsed && (

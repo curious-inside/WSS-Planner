@@ -44,9 +44,9 @@ export default function HomePage() {
   return (
     <div className={styles.container}>
       <div className={styles.hero}>
-        <h1 className={styles.title}>WSS BugTracker</h1>
+        <h1 className={styles.title}>WSS Planner</h1>
         <p className={styles.subtitle}>
-          Powerful project management and bug tracking for modern teams.
+          Powerful project management and planning for modern teams.
           Streamline your workflow with agile boards, issue tracking, and real-time collaboration.
         </p>
         <div className={styles.buttonGroup}>

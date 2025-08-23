@@ -1,8 +1,8 @@
-# WSS BugTracker - Deployment Guide
+# WSS Planner - Deployment Guide
 
 ## 🚀 Repository Information
 
-**GitHub Repository**: https://github.com/curious-inside/WSS-BugTracker  
+**GitHub Repository**: https://github.com/curious-inside/WSS-Planner  
 **Visibility**: Private  
 **Status**: Ready for deployment
 
@@ -11,8 +11,8 @@
 ### 1. Vercel (Recommended)
 ```bash
 # Clone the repository
-git clone https://github.com/curious-inside/WSS-BugTracker.git
-cd WSS-BugTracker
+git clone https://github.com/curious-inside/WSS-Planner.git
+cd WSS-Planner
 
 # Deploy to Vercel
 npx vercel
@@ -44,7 +44,7 @@ railway up
 
 ### Required Variables
 ```env
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/wss-bugtracker
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/wss-planner
 NEXTAUTH_URL=https://your-app.vercel.app
 NEXTAUTH_SECRET=your-super-secret-key-here
 ```
@@ -72,7 +72,7 @@ GITHUB_CLIENT_SECRET=your-github-client-secret
 docker run -d -p 27017:27017 --name mongodb mongo:latest
 
 # Connection string
-MONGODB_URI=mongodb://localhost:27017/wss-bugtracker
+MONGODB_URI=mongodb://localhost:27017/wss-planner
 ```
 
 ## 🔐 Security Configuration
@@ -98,7 +98,7 @@ openssl rand -base64 32
 
 ## 📁 File Structure for Deployment
 ```
-WSS-BugTracker/
+WSS-Planner/
 ├── app/                 # Next.js App Router
 ├── components/          # React components
 ├── lib/                # Utilities
@@ -212,8 +212,8 @@ Consider integrating:
 ## 🎯 Production URLs
 
 After deployment, your application will be available at:
-- **Vercel**: `https://wss-bugtracker.vercel.app`
-- **Railway**: `https://wss-bugtracker.up.railway.app`
+- **Vercel**: `https://wss-planner.vercel.app`
+- **Railway**: `https://wss-planner.up.railway.app`
 - **Custom Domain**: Configure in deployment platform
 
 ## 📞 Support

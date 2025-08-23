@@ -1,6 +1,6 @@
-# WSS BugTracker
+# WSS Planner
 
-A comprehensive web-based project management and bug tracking application built with Next.js, MongoDB, and Microsoft Fluent UI 2.
+A comprehensive web-based project management and planning application built with Next.js, MongoDB, and Microsoft Fluent UI 2.
 
 ## Features
 
@@ -9,7 +9,7 @@ A comprehensive web-based project management and bug tracking application built 
 - **Modern UI**: Microsoft Fluent UI 2 design system
 - **Database**: MongoDB with Mongoose ODM
 - **User Management**: Role-based access control
-- **Issue Management**: Create, view, and manage issues with different types and priorities
+- **Task Management**: Create, view, and manage tasks with different types and priorities
 - **Dashboard**: Overview with statistics and recent activity
 - **Responsive Design**: Works on desktop and mobile devices
 
@@ -119,7 +119,7 @@ A comprehensive web-based project management and bug tracking application built 
 ## Project Structure
 
 ```
-wss-bugtracker/
+wss-planner/
 ├── app/                    # Next.js App Router
 │   ├── (auth)/            # Authentication pages
 │   ├── (dashboard)/       # Protected dashboard pages
@@ -218,10 +218,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 If you encounter any issues or have questions:
 
-1. Check the [Issues](https://github.com/your-repo/wss-bugtracker/issues) page
+1. Check the [Issues](https://github.com/your-repo/wss-planner/issues) page
 2. Create a new issue with detailed information
 3. Contact the development team
 
 ---
 
-Built with ❤️ using Next.js, MongoDB, and Microsoft Fluent UI 2
+Built with ❤️ using Next.js, MongoDB, and Microsoft Fluent UI 2 - WSS Planner

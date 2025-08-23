@@ -116,7 +116,7 @@ export default function RegisterPage() {
           header={
             <div className={styles.header}>
               <Text className={styles.title}>Create an Account</Text>
-              <Text>Join WSS BugTracker today</Text>
+              <Text>Join WSS Planner today</Text>
             </div>
           }
         />

@@ -3,7 +3,7 @@ import Providers from '@/components/Providers'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'WSS BugTracker - Project Management Tool',
+  title: 'WSS Planner - Project Management Tool',
   description: 'A comprehensive project management and bug tracking application',
 }
 
