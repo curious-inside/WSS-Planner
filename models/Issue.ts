@@ -94,7 +94,7 @@ const IssueSchema = new Schema<IIssue>(
 )
 
 // Index for text search
-IssueSchema.index({ key: 'text', title: 'text', description: 'text' })
+IssueSchema.index({ title: 'text', description: 'text' })
 
 // Compound indexes for common queries
 IssueSchema.index({ projectId: 1, status: 1 })

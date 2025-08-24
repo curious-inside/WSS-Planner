@@ -1,9 +1,7 @@
 'use client'
 
-'use client'
-
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSession, signOut } from 'next-auth/react'
 import {
   makeStyles,
   tokens,
@@ -16,8 +14,7 @@ import {
   MenuItem,
   MenuDivider,
   Input,
-  Dropdown,
-  Option,
+  Text,
 } from '@fluentui/react-components'
 import {
   BoardRegular,
@@ -30,8 +27,8 @@ import {
   SearchRegular,
   AddRegular,
   AppsRegular,
+  Navigation20Regular,
 } from '@fluentui/react-icons'
-import { useProject } from '@/contexts/ProjectContext'
 
 const useStyles = makeStyles({
   layout: {
@@ -83,34 +80,26 @@ const useStyles = makeStyles({
     flex: 1,
   },
   createButton: {
-    margin: `0 ${tokens.spacingVerticalS}`,
+    margin: tokens.spacingVerticalS,
   },
 })
 
 interface DashboardLayoutProps {
   children: React.ReactNode
+  breadcrumbs?: { title: string; href?: string }[]
 }
 
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, breadcrumbs = [] }: DashboardLayoutProps) {
   const styles = useStyles()
   const router = useRouter()
-  const { data: session } = useSession()
-  const { projects, selectedProject, setSelectedProject, loading: projectsLoading } = useProject()
 
   const navItems = [
     { id: 'dashboard', icon: <HomeRegular />, label: 'Dashboard', href: '/dashboard' },
+    { id: 'projects', icon: <AppsRegular />, label: 'Projects', href: '/projects' },
     { id: 'board', icon: <BoardRegular />, label: 'Board', href: '/board' },
     { id: 'issues', icon: <TaskListAddRegular />, label: 'Issues', href: '/issues' },
     { id: 'team', icon: <PeopleRegular />, label: 'Team', href: '/team' },
-    { id: 'projects', icon: <AppsRegular />, label: 'Projects', href: '/projects' },
   ]
-
-  const handleProjectChange = (_: any, data: any) => {
-    const project = projects.find(p => p._id === data.optionValue)
-    if (project) {
-      setSelectedProject(project)
-    }
-  }
 
   return (
     <div className={styles.layout}>
@@ -119,6 +108,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className={styles.sidebarHeader}>
           <div className={styles.logo}>WSS Planner</div>
         </div>
+
+        <Button
+          appearance="primary"
+          icon={<AddRegular />}
+          className={styles.createButton}
+        >
+          Create Issue
+        </Button>
+
         <div className={styles.nav}>
           {navItems.map((item) => (
             <Button
@@ -126,7 +124,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               appearance="subtle"
               icon={item.icon}
               onClick={() => router.push(item.href)}
-              style={{ width: '100%', justifyContent: 'flex-start', marginBottom: tokens.spacingVerticalXS }}
+              style={{
+                width: '100%',
+                justifyContent: 'flex-start',
+                marginBottom: tokens.spacingVerticalXS,
+              }}
             >
               {item.label}
             </Button>
@@ -138,30 +140,26 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className={styles.main}>
         {/* Top Bar */}
         <div className={styles.topbar}>
-          <Dropdown
-            style={{ minWidth: '150px' }}
-            value={selectedProject?.name || 'Select a project'}
-            onOptionSelect={handleProjectChange}
-            disabled={projectsLoading || projects.length === 0}
-          >
-            {projects.map((project) => (
-              <Option key={project._id} value={project._id}>
-                {project.name}
-              </Option>
-            ))}
-          </Dropdown>
-
           <Input
-            placeholder="Search..."
+            placeholder="Search issues, projects..."
             contentBefore={<SearchRegular />}
             style={{ width: '300px' }}
           />
+
           <div style={{ flex: 1 }} />
-          <Button icon={<AddRegular />} appearance="primary">Create</Button>
+
           <Menu>
             <MenuTrigger disableButtonEnhancement>
-              <Button appearance="subtle" icon={<Avatar name={session?.user?.name || ''} size={28} />}>
-                {session?.user?.name}
+              <Button
+                appearance="subtle"
+                icon={
+                  <Avatar
+                    name="Demo User"
+                    size={24}
+                  />
+                }
+              >
+                Demo User
               </Button>
             </MenuTrigger>
             <MenuPopover>
@@ -169,7 +167,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <MenuItem icon={<PersonRegular />}>Profile</MenuItem>
                 <MenuItem icon={<SettingsRegular />}>Settings</MenuItem>
                 <MenuDivider />
-                <MenuItem icon={<SignOutRegular />} onClick={() => signOut()}>
+                <MenuItem
+                  icon={<SignOutRegular />}
+                  onClick={() => router.push('/login')}
+                >
                   Sign Out
                 </MenuItem>
               </MenuList>

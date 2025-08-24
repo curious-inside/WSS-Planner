@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
-import { useProject } from '@/contexts/ProjectContext'
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import {
   Card,
+  CardHeader,
   Text,
   Button,
   DataGrid,
@@ -31,22 +32,20 @@ import {
   Field,
   Input,
   Textarea,
+  Combobox,
   MessageBar,
   MessageBarBody,
-  Spinner,
-  Link,
 } from '@fluentui/react-components'
 import {
   AddRegular,
   SearchRegular,
+  FilterRegular,
   BugRegular,
   TaskListAddRegular,
   PersonRegular,
   CalendarRegular,
 } from '@fluentui/react-icons'
 import DashboardLayout from '@/components/DashboardLayout'
-import { IIssue } from '@/types'
-import { useDebounce } from '@/hooks/useDebounce'
 
 const useStyles = makeStyles({
   container: {
@@ -69,199 +68,226 @@ const useStyles = makeStyles({
   createButton: {
     marginLeft: 'auto',
   },
+  formField: {
+    marginBottom: tokens.spacingVerticalM,
+  },
   dialogContent: {
     display: 'flex',
     flexDirection: 'column',
     gap: tokens.spacingVerticalM,
     minWidth: '500px',
   },
-  loading: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: '200px',
-  },
 })
+
+interface Issue {
+  _id: string
+  key: string
+  title: string
+  type: string
+  status: string
+  priority: string
+  reporterId: any
+  assigneeId?: any
+  projectId: any
+  createdAt: string
+  updatedAt: string
+}
 
 export default function IssuesPage() {
   const styles = useStyles()
-  const { selectedProject } = useProject()
-  const [issues, setIssues] = useState<IIssue[]>([])
+  const { data: session } = useSession()
+  const [issues, setIssues] = useState<Issue[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [priorityFilter, setPriorityFilter] = useState('all')
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [formError, setFormError] = useState<string | null>(null)
+  const [error, setError] = useState('')
   const [creating, setCreating] = useState(false)
 
-  const debouncedSearchQuery = useDebounce(searchQuery, 300)
-
+  // Form state for creating issues
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     type: 'task' as const,
     priority: 'medium' as const,
-    projectId: '',
+    projectId: 'temp-project-id', // In real app, this would come from context
   })
 
   useEffect(() => {
-    if (selectedProject) {
-      setFormData(prev => ({ ...prev, projectId: selectedProject._id }))
-    }
-  }, [selectedProject])
+    fetchIssues()
+  }, [])
 
-  const fetchIssues = useCallback(async () => {
-    if (!selectedProject) {
-      setIssues([])
-      setLoading(false)
-      return
-    }
-
-    setLoading(true)
-    setError(null)
+  const fetchIssues = async () => {
     try {
-      const params = new URLSearchParams()
-      params.append('projectId', selectedProject._id)
-      if (debouncedSearchQuery) params.append('search', debouncedSearchQuery)
-      if (statusFilter !== 'all') params.append('status', statusFilter)
-      if (priorityFilter !== 'all') params.append('priority', priorityFilter)
-
-      const response = await fetch(`/api/issues?${params.toString()}`)
-      if (!response.ok) {
+      const response = await fetch('/api/issues')
+      if (response.ok) {
         const data = await response.json()
-        throw new Error(data.error || 'Failed to fetch issues')
+        setIssues(data)
+      } else {
+        console.error('Failed to fetch issues')
       }
-      const data = await response.json()
-      setIssues(data)
-    } catch (err: any) {
-      setError(err.message)
+    } catch (error) {
+      console.error('Error fetching issues:', error)
     } finally {
       setLoading(false)
     }
-  }, [selectedProject, debouncedSearchQuery, statusFilter, priorityFilter])
-
-  useEffect(() => {
-    fetchIssues()
-  }, [fetchIssues])
+  }
 
   const handleCreateIssue = async () => {
-    setFormError(null)
+    setError('')
     setCreating(true)
 
     try {
       const response = await fetch('/api/issues', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(formData),
       })
 
       const data = await response.json()
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create issue')
-      }
 
-      setIssues(prev => [data, ...prev])
-      setCreateDialogOpen(false)
-      setFormData({
-        title: '',
-        description: '',
-        type: 'task',
-        priority: 'medium',
-        projectId: selectedProject?._id || '',
-      })
-    } catch (err: any) {
-      setFormError(err.message)
+      if (!response.ok) {
+        setError(data.error || 'Failed to create issue')
+      } else {
+        setIssues([data, ...issues])
+        setCreateDialogOpen(false)
+        setFormData({
+          title: '',
+          description: '',
+          type: 'task',
+          priority: 'medium',
+          projectId: 'temp-project-id',
+        })
+      }
+    } catch (err) {
+      setError('An error occurred. Please try again.')
     } finally {
       setCreating(false)
     }
   }
 
   const getTypeBadge = (type: string) => {
-    const config = {
+    const typeConfig = {
       bug: { color: 'danger', icon: <BugRegular /> },
       story: { color: 'success', icon: <PersonRegular /> },
       task: { color: 'brand', icon: <TaskListAddRegular /> },
       epic: { color: 'important', icon: <CalendarRegular /> },
       improvement: { color: 'warning', icon: <TaskListAddRegular /> },
       sub_task: { color: 'subtle', icon: <TaskListAddRegular /> },
-    }[type] || { color: 'brand', icon: <TaskListAddRegular /> }
+    }
 
-    return <Badge appearance={config.color as any} icon={config.icon}>{type.replace('_', ' ')}</Badge>
+    const config = typeConfig[type as keyof typeof typeConfig] || typeConfig.task
+    return (
+      <Badge appearance={config.color as any} icon={config.icon}>
+        {type.replace('_', ' ')}
+      </Badge>
+    )
   }
 
   const getPriorityBadge = (priority: string) => {
-    const appearance = {
-      critical: 'important',
-      high: 'important',
-      medium: 'warning',
-      low: 'subtle',
-    }[priority] || 'subtle'
-    return <Badge appearance={appearance as any}>{priority}</Badge>
+    const appearance =
+      priority === 'critical' ? 'important' :
+      priority === 'high' ? 'important' :
+      priority === 'medium' ? 'warning' : 'subtle'
+
+    return <Badge appearance={appearance}>{priority}</Badge>
   }
 
   const getStatusBadge = (status: string) => {
-    const appearance = {
-      done: 'success',
-      in_progress: 'warning',
-      in_review: 'brand',
-      todo: 'subtle',
-      cancelled: 'subtle',
-    }[status] || 'subtle'
-    return <Badge appearance={appearance as any}>{status.replace('_', ' ')}</Badge>
+    const appearance =
+      status === 'done' ? 'success' :
+      status === 'in_progress' ? 'warning' :
+      status === 'in_review' ? 'brand' : 'subtle'
+
+    return <Badge appearance={appearance}>{status.replace('_', ' ')}</Badge>
   }
 
-  const columns: TableColumnDefinition<IIssue>[] = [
-    createTableColumn<IIssue>({
+  const columns: TableColumnDefinition<Issue>[] = [
+    createTableColumn<Issue>({
       columnId: 'key',
       compare: (a, b) => a.key.localeCompare(b.key),
       renderHeaderCell: () => 'Key',
       renderCell: (item) => (
         <TableCellLayout>
-          <Link href={`/issues/${item.key}`}><Text weight="semibold">{item.key}</Text></Link>
+          <Text weight="semibold">{item.key}</Text>
         </TableCellLayout>
       ),
     }),
-    createTableColumn<IIssue>({
+    createTableColumn<Issue>({
       columnId: 'title',
       compare: (a, b) => a.title.localeCompare(b.title),
       renderHeaderCell: () => 'Title',
-      renderCell: (item) => <TableCellLayout>{item.title}</TableCellLayout>,
+      renderCell: (item) => (
+        <TableCellLayout>
+          <Text>{item.title}</Text>
+        </TableCellLayout>
+      ),
     }),
-    createTableColumn<IIssue>({
+    createTableColumn<Issue>({
       columnId: 'type',
       compare: (a, b) => a.type.localeCompare(b.type),
       renderHeaderCell: () => 'Type',
-      renderCell: (item) => <TableCellLayout>{getTypeBadge(item.type)}</TableCellLayout>,
+      renderCell: (item) => (
+        <TableCellLayout>
+          {getTypeBadge(item.type)}
+        </TableCellLayout>
+      ),
     }),
-    createTableColumn<IIssue>({
+    createTableColumn<Issue>({
       columnId: 'status',
       compare: (a, b) => a.status.localeCompare(b.status),
       renderHeaderCell: () => 'Status',
-      renderCell: (item) => <TableCellLayout>{getStatusBadge(item.status)}</TableCellLayout>,
+      renderCell: (item) => (
+        <TableCellLayout>
+          {getStatusBadge(item.status)}
+        </TableCellLayout>
+      ),
     }),
-    createTableColumn<IIssue>({
+    createTableColumn<Issue>({
       columnId: 'priority',
       compare: (a, b) => a.priority.localeCompare(b.priority),
       renderHeaderCell: () => 'Priority',
-      renderCell: (item) => <TableCellLayout>{getPriorityBadge(item.priority)}</TableCellLayout>,
+      renderCell: (item) => (
+        <TableCellLayout>
+          {getPriorityBadge(item.priority)}
+        </TableCellLayout>
+      ),
     }),
-    createTableColumn<IIssue>({
+    createTableColumn<Issue>({
       columnId: 'assignee',
-      compare: (a, b) => (a.assigneeId?.name || '').localeCompare(b.assigneeId?.name || ''),
       renderHeaderCell: () => 'Assignee',
-      renderCell: (item) => <TableCellLayout>{(typeof item.assigneeId === 'object' && item.assigneeId?.name) || 'Unassigned'}</TableCellLayout>,
+      renderCell: (item) => (
+        <TableCellLayout>
+          {item.assigneeId?.name || 'Unassigned'}
+        </TableCellLayout>
+      ),
     }),
-    createTableColumn<IIssue>({
+    createTableColumn<Issue>({
       columnId: 'created',
       compare: (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
       renderHeaderCell: () => 'Created',
-      renderCell: (item) => <TableCellLayout>{new Date(item.createdAt).toLocaleDateString()}</TableCellLayout>,
+      renderCell: (item) => (
+        <TableCellLayout>
+          {new Date(item.createdAt).toLocaleDateString()}
+        </TableCellLayout>
+      ),
     }),
   ]
 
-  const totalIssueCount = useMemo(() => issues.length, [issues]);
+  // Filter issues based on search and filters
+  const filteredIssues = issues.filter(issue => {
+    const matchesSearch = searchQuery === '' ||
+      issue.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      issue.key.toLowerCase().includes(searchQuery.toLowerCase())
+
+    const matchesStatus = statusFilter === 'all' || issue.status === statusFilter
+    const matchesPriority = priorityFilter === 'all' || issue.priority === priorityFilter
+
+    return matchesSearch && matchesStatus && matchesPriority
+  })
 
   return (
     <DashboardLayout breadcrumbs={[{ title: 'Issues' }]}>
@@ -269,24 +295,20 @@ export default function IssuesPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text size={600} weight="semibold">Issues</Text>
           <Text size={300} style={{ color: tokens.colorNeutralForeground2 }}>
-            {totalIssueCount} issues
+            {filteredIssues.length} of {issues.length} issues
           </Text>
         </div>
-
-        {error && (
-          <MessageBar intent="error" onDismiss={() => setError(null)}>
-            <MessageBarBody>{error}</MessageBarBody>
-          </MessageBar>
-        )}
 
         {/* Toolbar */}
         <div className={styles.toolbar}>
           <SearchBox
             placeholder="Search issues..."
+            contentBefore={<SearchRegular />}
             value={searchQuery}
             onChange={(_, data) => setSearchQuery(data.value)}
             className={styles.searchBox}
           />
+
           <Dropdown
             placeholder="Status"
             value={statusFilter}
@@ -299,6 +321,7 @@ export default function IssuesPage() {
             <Option value="in_review">In Review</Option>
             <Option value="done">Done</Option>
           </Dropdown>
+
           <Dropdown
             placeholder="Priority"
             value={priorityFilter}
@@ -311,32 +334,44 @@ export default function IssuesPage() {
             <Option value="medium">Medium</Option>
             <Option value="low">Low</Option>
           </Dropdown>
+
           <Dialog open={createDialogOpen} onOpenChange={(_, data) => setCreateDialogOpen(data.open)}>
             <DialogTrigger disableButtonEnhancement>
-              <Button appearance="primary" icon={<AddRegular />} className={styles.createButton} disabled={!selectedProject}>Create Issue</Button>
+              <Button
+                appearance="primary"
+                icon={<AddRegular />}
+                className={styles.createButton}
+              >
+                Create Issue
+              </Button>
             </DialogTrigger>
             <DialogSurface>
               <DialogBody>
                 <DialogTitle>Create New Issue</DialogTitle>
-                <DialogContent>
-                  {formError && (
-                    <MessageBar intent="error" onDismiss={() => setFormError(null)}>
-                      <MessageBarBody>{formError}</MessageBarBody>
+                <DialogContent className={styles.dialogContent}>
+                  {error && (
+                    <MessageBar intent="error">
+                      <MessageBarBody>{error}</MessageBarBody>
                     </MessageBar>
                   )}
+
                   <Field label="Title" required>
                     <Input
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      placeholder="Enter issue title"
                     />
                   </Field>
+
                   <Field label="Description">
                     <Textarea
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="Describe the issue..."
                       rows={4}
                     />
                   </Field>
+
                   <div style={{ display: 'flex', gap: tokens.spacingHorizontalM }}>
                     <Field label="Type" style={{ flex: 1 }}>
                       <Dropdown
@@ -346,8 +381,11 @@ export default function IssuesPage() {
                         <Option value="bug">Bug</Option>
                         <Option value="story">Story</Option>
                         <Option value="task">Task</Option>
+                        <Option value="epic">Epic</Option>
+                        <Option value="improvement">Improvement</Option>
                       </Dropdown>
                     </Field>
+
                     <Field label="Priority" style={{ flex: 1 }}>
                       <Dropdown
                         value={formData.priority}
@@ -365,7 +403,11 @@ export default function IssuesPage() {
                   <DialogTrigger disableButtonEnhancement>
                     <Button appearance="secondary">Cancel</Button>
                   </DialogTrigger>
-                  <Button appearance="primary" onClick={handleCreateIssue} disabled={creating || !formData.title}>
+                  <Button
+                    appearance="primary"
+                    onClick={handleCreateIssue}
+                    disabled={creating || !formData.title}
+                  >
                     {creating ? 'Creating...' : 'Create Issue'}
                   </Button>
                 </DialogActions>
@@ -377,27 +419,39 @@ export default function IssuesPage() {
         {/* Issues Table */}
         <Card>
           {loading ? (
-            <div className={styles.loading}><Spinner label="Loading issues..." /></div>
+            <div style={{ padding: tokens.spacingVerticalXL, textAlign: 'center' }}>
+              Loading issues...
+            </div>
           ) : (
-            <DataGrid items={issues} columns={columns} sortable getRowId={(item) => item._id}>
+            <DataGrid
+              items={filteredIssues}
+              columns={columns}
+              sortable
+              getRowId={(item) => item._id}
+            >
               <DataGridHeader>
                 <DataGridRow>
-                  {({ renderHeaderCell }) => <DataGridHeaderCell>{renderHeaderCell()}</DataGridHeaderCell>}
+                  {({ renderHeaderCell }) => (
+                    <DataGridHeaderCell>{renderHeaderCell()}</DataGridHeaderCell>
+                  )}
                 </DataGridRow>
               </DataGridHeader>
-              <DataGridBody<IIssue>>
+              <DataGridBody<Issue>>
                 {({ item, rowId }) => (
-                  <DataGridRow<IIssue> key={rowId}>
-                    {({ renderCell }) => <DataGridCell>{renderCell(item)}</DataGridCell>}
+                  <DataGridRow<Issue> key={rowId}>
+                    {({ renderCell }) => (
+                      <DataGridCell>{renderCell(item)}</DataGridCell>
+                    )}
                   </DataGridRow>
                 )}
               </DataGridBody>
             </DataGrid>
           )}
-          {!loading && issues.length === 0 && (
+
+          {!loading && filteredIssues.length === 0 && (
             <div style={{ padding: tokens.spacingVerticalXXL, textAlign: 'center' }}>
               <Text size={400} style={{ color: tokens.colorNeutralForeground2 }}>
-                No issues found matching your criteria.
+                No issues found. Create your first issue to get started.
               </Text>
             </div>
           )}

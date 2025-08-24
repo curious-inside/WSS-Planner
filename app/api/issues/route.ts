@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import dbConnect from '@/lib/mongodb'
 import Issue from '@/models/Issue'
-import Project from '@/models/Project'
 import { z } from 'zod'
 
 const createIssueSchema = z.object({
@@ -27,8 +26,6 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get('projectId')
     const status = searchParams.get('status')
-    const priority = searchParams.get('priority')
-    const search = searchParams.get('search')
     const assigneeId = searchParams.get('assigneeId')
 
     await dbConnect()
@@ -36,11 +33,7 @@ export async function GET(request: Request) {
     let query: any = {}
     if (projectId) query.projectId = projectId
     if (status) query.status = status
-    if (priority) query.priority = priority
     if (assigneeId) query.assigneeId = assigneeId
-    if (search) {
-      query.$text = { $search: search }
-    }
 
     const issues = await Issue.find(query)
       .populate('reporterId', 'name email avatar')
@@ -72,14 +65,9 @@ export async function POST(request: Request) {
 
     await dbConnect()
 
-    const project = await Project.findById(validatedData.projectId)
-    if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-    }
-
-    // Generate issue key
+    // Generate issue key (simplified version)
     const issueCount = await Issue.countDocuments({ projectId: validatedData.projectId })
-    const issueKey = `${project.key}-${issueCount + 1}`
+    const issueKey = `PROJ-${(issueCount + 1).toString().padStart(3, '0')}`
 
     const issue = await Issue.create({
       ...validatedData,
