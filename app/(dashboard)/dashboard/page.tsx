@@ -1,9 +1,9 @@
 'use client'
 
+import { useState, useEffect, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import {
   Card,
-  CardHeader,
   Text,
   makeStyles,
   tokens,
@@ -18,16 +18,19 @@ import {
   TableCellLayout,
   TableColumnDefinition,
   createTableColumn,
+  Spinner,
+  MessageBar,
+  MessageBarBody,
+  Link,
 } from '@fluentui/react-components'
 import {
   TaskListRegular,
   PersonRegular,
-  CalendarRegular,
   CheckmarkCircleRegular,
-  ErrorCircleRegular,
   ClockRegular,
 } from '@fluentui/react-icons'
 import DashboardLayout from '@/components/DashboardLayout'
+import { IIssue } from '@/types'
 
 const useStyles = makeStyles({
   container: {
@@ -67,117 +70,123 @@ const useStyles = makeStyles({
     fontWeight: tokens.fontWeightSemibold,
     marginBottom: tokens.spacingVerticalM,
   },
+  loading: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '200px',
+  },
 })
-
-interface Issue {
-  id: string
-  key: string
-  title: string
-  status: string
-  priority: string
-  assignee: string
-  created: string
-}
-
-const mockIssues: Issue[] = [
-  {
-    id: '1',
-    key: 'PROJ-101',
-    title: 'Fix login page validation',
-    status: 'In Progress',
-    priority: 'High',
-    assignee: 'John Doe',
-    created: '2025-01-20',
-  },
-  {
-    id: '2',
-    key: 'PROJ-102',
-    title: 'Implement dark mode',
-    status: 'Todo',
-    priority: 'Medium',
-    assignee: 'Jane Smith',
-    created: '2025-01-19',
-  },
-  {
-    id: '3',
-    key: 'PROJ-103',
-    title: 'Update API documentation',
-    status: 'Done',
-    priority: 'Low',
-    assignee: 'Bob Wilson',
-    created: '2025-01-18',
-  },
-]
 
 export default function DashboardPage() {
   const styles = useStyles()
   const { data: session } = useSession()
+  const [issues, setIssues] = useState<IIssue[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchIssues = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const response = await fetch('/api/issues')
+        if (!response.ok) {
+          throw new Error('Failed to fetch issues')
+        }
+        const data = await response.json()
+        setIssues(data)
+      } catch (err: any) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchIssues()
+  }, [])
+
+  const stats = useMemo(() => {
+    if (!session?.user) return { total: 0, assignedToMe: 0, completed: 0, inProgress: 0 }
+
+    return {
+      total: issues.length,
+      assignedToMe: issues.filter(issue => issue.assigneeId?._id === session.user.id).length,
+      completed: issues.filter(issue => issue.status === 'done').length,
+      inProgress: issues.filter(issue => issue.status === 'in_progress').length,
+    }
+  }, [issues, session])
 
   const getPriorityBadge = (priority: string) => {
-    const appearance = priority === 'High' ? 'important' : priority === 'Medium' ? 'warning' : 'subtle'
+    const appearance =
+      priority === 'critical' ? 'important' :
+      priority === 'high' ? 'important' :
+      priority === 'medium' ? 'warning' : 'subtle'
     return <Badge appearance={appearance}>{priority}</Badge>
   }
 
   const getStatusBadge = (status: string) => {
-    let appearance: 'success' | 'warning' | 'subtle' | 'important' = 'subtle'
-    if (status === 'Done') appearance = 'success'
-    else if (status === 'In Progress') appearance = 'warning'
-    
-    return <Badge appearance={appearance}>{status}</Badge>
+    const appearance =
+      status === 'done' ? 'success' :
+      status === 'in_progress' ? 'warning' :
+      status === 'in_review' ? 'brand' : 'subtle'
+    return <Badge appearance={appearance}>{status.replace(/_/g, ' ')}</Badge>
   }
 
-  const columns: TableColumnDefinition<Issue>[] = [
-    createTableColumn<Issue>({
+  const columns: TableColumnDefinition<IIssue>[] = [
+    createTableColumn<IIssue>({
       columnId: 'key',
       compare: (a, b) => a.key.localeCompare(b.key),
       renderHeaderCell: () => 'Key',
       renderCell: (item) => (
         <TableCellLayout>
-          <Text weight="semibold">{item.key}</Text>
+          <Link href={`/issues/${item.key}`}>
+            <Text weight="semibold">{item.key}</Text>
+          </Link>
         </TableCellLayout>
       ),
     }),
-    createTableColumn<Issue>({
+    createTableColumn<IIssue>({
       columnId: 'title',
       compare: (a, b) => a.title.localeCompare(b.title),
       renderHeaderCell: () => 'Title',
-      renderCell: (item) => (
-        <TableCellLayout>
-          {item.title}
-        </TableCellLayout>
-      ),
+      renderCell: (item) => <TableCellLayout>{item.title}</TableCellLayout>,
     }),
-    createTableColumn<Issue>({
+    createTableColumn<IIssue>({
       columnId: 'status',
       compare: (a, b) => a.status.localeCompare(b.status),
       renderHeaderCell: () => 'Status',
-      renderCell: (item) => (
-        <TableCellLayout>
-          {getStatusBadge(item.status)}
-        </TableCellLayout>
-      ),
+      renderCell: (item) => <TableCellLayout>{getStatusBadge(item.status)}</TableCellLayout>,
     }),
-    createTableColumn<Issue>({
+    createTableColumn<IIssue>({
       columnId: 'priority',
       compare: (a, b) => a.priority.localeCompare(b.priority),
       renderHeaderCell: () => 'Priority',
-      renderCell: (item) => (
-        <TableCellLayout>
-          {getPriorityBadge(item.priority)}
-        </TableCellLayout>
-      ),
+      renderCell: (item) => <TableCellLayout>{getPriorityBadge(item.priority)}</TableCellLayout>,
     }),
-    createTableColumn<Issue>({
+    createTableColumn<IIssue>({
       columnId: 'assignee',
-      compare: (a, b) => a.assignee.localeCompare(b.assignee),
+      compare: (a, b) => (a.assigneeId?.name || '').localeCompare(b.assigneeId?.name || ''),
       renderHeaderCell: () => 'Assignee',
       renderCell: (item) => (
         <TableCellLayout>
-          {item.assignee}
+          {item.assigneeId?.name || 'Unassigned'}
         </TableCellLayout>
       ),
     }),
   ]
+
+  const recentIssues = useMemo(() => issues.slice(0, 5), [issues])
+
+  if (loading) {
+    return (
+      <DashboardLayout breadcrumbs={[{ title: 'Dashboard' }]}>
+        <div className={styles.loading}>
+          <Spinner label="Loading dashboard..." />
+        </div>
+      </DashboardLayout>
+    )
+  }
 
   return (
     <DashboardLayout breadcrumbs={[{ title: 'Dashboard' }]}>
@@ -191,6 +200,12 @@ export default function DashboardPage() {
           </Text>
         </div>
 
+        {error && (
+          <MessageBar intent="error">
+            <MessageBarBody>{error}</MessageBarBody>
+          </MessageBar>
+        )}
+
         {/* Stats Cards */}
         <div className={styles.grid}>
           <Card className={styles.statsCard}>
@@ -198,34 +213,31 @@ export default function DashboardPage() {
               <TaskListRegular />
               <Text size={400} weight="semibold">Total Issues</Text>
             </div>
-            <div className={styles.statValue}>24</div>
+            <div className={styles.statValue}>{stats.total}</div>
             <div className={styles.statLabel}>Across all projects</div>
           </Card>
-
           <Card className={styles.statsCard}>
             <div className={styles.cardHeader}>
               <PersonRegular />
               <Text size={400} weight="semibold">Assigned to Me</Text>
             </div>
-            <div className={styles.statValue}>8</div>
+            <div className={styles.statValue}>{stats.assignedToMe}</div>
             <div className={styles.statLabel}>Active assignments</div>
           </Card>
-
           <Card className={styles.statsCard}>
             <div className={styles.cardHeader}>
               <CheckmarkCircleRegular />
               <Text size={400} weight="semibold">Completed</Text>
             </div>
-            <div className={styles.statValue}>12</div>
-            <div className={styles.statLabel}>This month</div>
+            <div className={styles.statValue}>{stats.completed}</div>
+            <div className={styles.statLabel}>Total completed</div>
           </Card>
-
           <Card className={styles.statsCard}>
             <div className={styles.cardHeader}>
               <ClockRegular />
               <Text size={400} weight="semibold">In Progress</Text>
             </div>
-            <div className={styles.statValue}>5</div>
+            <div className={styles.statValue}>{stats.inProgress}</div>
             <div className={styles.statLabel}>Currently active</div>
           </Card>
         </div>
@@ -234,15 +246,14 @@ export default function DashboardPage() {
         <div className={styles.section}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.spacingVerticalM }}>
             <Text className={styles.sectionTitle}>Recent Issues</Text>
-            <Button appearance="subtle">View All</Button>
+            <Button appearance="subtle" as="a" href="/issues">View All</Button>
           </div>
-
           <Card>
             <DataGrid
-              items={mockIssues}
+              items={recentIssues}
               columns={columns}
               sortable
-              getRowId={(item) => item.id}
+              getRowId={(item) => item._id}
             >
               <DataGridHeader>
                 <DataGridRow>
@@ -251,9 +262,9 @@ export default function DashboardPage() {
                   )}
                 </DataGridRow>
               </DataGridHeader>
-              <DataGridBody<Issue>>
+              <DataGridBody<IIssue>>
                 {({ item, rowId }) => (
-                  <DataGridRow<Issue> key={rowId}>
+                  <DataGridRow<IIssue> key={rowId}>
                     {({ renderCell }) => (
                       <DataGridCell>{renderCell(item)}</DataGridCell>
                     )}
