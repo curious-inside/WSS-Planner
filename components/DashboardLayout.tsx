@@ -1,12 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import {
   makeStyles,
   tokens,
-  Hamburger,
   Button,
   Avatar,
   Menu,
@@ -15,13 +13,8 @@ import {
   MenuList,
   MenuItem,
   MenuDivider,
-  SearchBox,
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbDivider,
-  Nav,
-  NavItem,
-  Badge,
+  Input,
+  Text,
 } from '@fluentui/react-components'
 import {
   BoardRegular,
@@ -33,8 +26,8 @@ import {
   HomeRegular,
   SearchRegular,
   AddRegular,
-  NotificationRegular,
   AppsRegular,
+  Navigation20Regular,
 } from '@fluentui/react-icons'
 
 const useStyles = makeStyles({
@@ -49,9 +42,6 @@ const useStyles = makeStyles({
     borderRight: `1px solid ${tokens.colorNeutralStroke2}`,
     display: 'flex',
     flexDirection: 'column',
-  },
-  sidebarCollapsed: {
-    width: '56px',
   },
   sidebarHeader: {
     padding: tokens.spacingVerticalM,
@@ -80,9 +70,6 @@ const useStyles = makeStyles({
     padding: `0 ${tokens.spacingHorizontalL}`,
     gap: tokens.spacingHorizontalL,
   },
-  breadcrumb: {
-    flex: 1,
-  },
   content: {
     flex: 1,
     padding: tokens.spacingVerticalL,
@@ -104,108 +91,62 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children, breadcrumbs = [] }: DashboardLayoutProps) {
   const styles = useStyles()
-  const { data: session, status } = useSession()
   const router = useRouter()
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-
-  if (status === 'loading') {
-    return <div>Loading...</div>
-  }
-
-  if (!session) {
-    router.push('/login')
-    return null
-  }
 
   const navItems = [
     { id: 'dashboard', icon: <HomeRegular />, label: 'Dashboard', href: '/dashboard' },
     { id: 'projects', icon: <AppsRegular />, label: 'Projects', href: '/projects' },
     { id: 'board', icon: <BoardRegular />, label: 'Board', href: '/board' },
     { id: 'issues', icon: <TaskListRegular />, label: 'Issues', href: '/issues' },
-    { id: 'reports', icon: <TaskListRegular />, label: 'Reports', href: '/reports' },
     { id: 'team', icon: <PeopleRegular />, label: 'Team', href: '/team' },
   ]
 
   return (
     <div className={styles.layout}>
       {/* Sidebar */}
-      <div className={`${styles.sidebar} ${sidebarCollapsed ? styles.sidebarCollapsed : ''}`}>
+      <div className={styles.sidebar}>
         <div className={styles.sidebarHeader}>
-          <Hamburger onClick={() => setSidebarCollapsed(!sidebarCollapsed)} />
-          {!sidebarCollapsed && <div className={styles.logo}>WSS Planner</div>}
+          <div className={styles.logo}>WSS Planner</div>
         </div>
 
-        {!sidebarCollapsed && (
-          <Button
-            appearance="primary"
-            icon={<AddRegular />}
-            className={styles.createButton}
-          >
-            Create Issue
-          </Button>
-        )}
+        <Button
+          appearance="primary"
+          icon={<AddRegular />}
+          className={styles.createButton}
+        >
+          Create Issue
+        </Button>
 
-        <Nav className={styles.nav} size="small">
+        <div className={styles.nav}>
           {navItems.map((item) => (
-            <NavItem
+            <Button
               key={item.id}
+              appearance="subtle"
               icon={item.icon}
-              value={item.id}
               onClick={() => router.push(item.href)}
+              style={{
+                width: '100%',
+                justifyContent: 'flex-start',
+                marginBottom: tokens.spacingVerticalXS,
+              }}
             >
-              {!sidebarCollapsed && item.label}
-            </NavItem>
+              {item.label}
+            </Button>
           ))}
-        </Nav>
-
-        {!sidebarCollapsed && (
-          <div style={{ padding: tokens.spacingVerticalS, borderTop: `1px solid ${tokens.colorNeutralStroke2}` }}>
-            <NavItem
-              icon={<SettingsRegular />}
-              value="settings"
-              onClick={() => router.push('/settings')}
-            >
-              Settings
-            </NavItem>
-          </div>
-        )}
+        </div>
       </div>
 
       {/* Main Content */}
       <div className={styles.main}>
         {/* Top Bar */}
         <div className={styles.topbar}>
-          <SearchBox
+          <Input
             placeholder="Search issues, projects..."
             contentBefore={<SearchRegular />}
             style={{ width: '300px' }}
           />
 
-          <div className={styles.breadcrumb}>
-            {breadcrumbs.length > 0 && (
-              <Breadcrumb>
-                {breadcrumbs.map((crumb, index) => (
-                  <div key={index}>
-                    <BreadcrumbItem
-                      onClick={crumb.href ? () => router.push(crumb.href!) : undefined}
-                    >
-                      {crumb.title}
-                    </BreadcrumbItem>
-                    {index < breadcrumbs.length - 1 && <BreadcrumbDivider />}
-                  </div>
-                ))}
-              </Breadcrumb>
-            )}
-          </div>
-
-          <Button
-            appearance="subtle"
-            icon={<NotificationRegular />}
-          >
-            <Badge appearance="filled" color="important" size="small">
-              3
-            </Badge>
-          </Button>
+          <div style={{ flex: 1 }} />
 
           <Menu>
             <MenuTrigger disableButtonEnhancement>
@@ -213,13 +154,12 @@ export default function DashboardLayout({ children, breadcrumbs = [] }: Dashboar
                 appearance="subtle"
                 icon={
                   <Avatar
-                    name={session.user?.name || ''}
-                    image={{ src: session.user?.image || undefined }}
+                    name="Demo User"
                     size={24}
                   />
                 }
               >
-                {session.user?.name}
+                Demo User
               </Button>
             </MenuTrigger>
             <MenuPopover>
@@ -229,7 +169,7 @@ export default function DashboardLayout({ children, breadcrumbs = [] }: Dashboar
                 <MenuDivider />
                 <MenuItem
                   icon={<SignOutRegular />}
-                  onClick={() => signOut({ callbackUrl: '/' })}
+                  onClick={() => router.push('/login')}
                 >
                   Sign Out
                 </MenuItem>

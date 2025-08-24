@@ -69,19 +69,31 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
 
+    console.log('Login attempt with:', { email, password: '***' })
+
     try {
       const result = await signIn('credentials', {
         email,
         password,
         redirect: false,
+        callbackUrl: '/dashboard'
       })
 
+      console.log('SignIn result:', JSON.stringify(result, null, 2))
+
       if (result?.error) {
+        console.error('Login error:', result.error)
         setError('Invalid email or password')
+      } else if (result?.ok) {
+        console.log('Login successful, redirecting to dashboard')
+        // Use window.location for a full page reload to ensure session is loaded
+        window.location.href = '/dashboard'
       } else {
-        router.push('/dashboard')
+        console.log('Unexpected result:', result)
+        setError('An unexpected error occurred')
       }
     } catch (err) {
+      console.error('Login exception:', err)
       setError('An error occurred. Please try again.')
     } finally {
       setLoading(false)

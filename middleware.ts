@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
+  // TEMPORARILY DISABLED - Allow all routes without authentication
+  return NextResponse.next()
+  
+  // Original auth logic commented out for now
+  /*
   // Allow access to public routes
   const publicRoutes = ['/', '/login', '/register']
   const apiAuthRoutes = request.nextUrl.pathname.startsWith('/api/auth')
@@ -28,6 +33,7 @@ export function middleware(request: NextRequest) {
   }
 
   return NextResponse.next()
+  */
 }
 
 export const config = {

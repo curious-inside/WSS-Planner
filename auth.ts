@@ -11,7 +11,6 @@ import User from '@/models/User'
 const client = new MongoClient(process.env.MONGODB_URI!)
 
 export const config = {
-  adapter: MongoDBAdapter(client),
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -20,18 +19,33 @@ export const config = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
+        console.log('Auth attempt with email:', credentials?.email)
+        
         if (!credentials?.email || !credentials?.password) {
+          console.log('Missing credentials')
           throw new Error('Invalid credentials')
         }
 
         await dbConnect()
+        console.log('DB connected')
 
         const user = await User.findOne({ email: credentials.email }).select('+password')
+        console.log('User found:', !!user)
 
-        if (!user || !(await user.comparePassword(credentials.password))) {
+        if (!user) {
+          console.log('User not found')
           throw new Error('Invalid credentials')
         }
 
+        const passwordMatch = await user.comparePassword(credentials.password)
+        console.log('Password match:', passwordMatch)
+
+        if (!passwordMatch) {
+          console.log('Password mismatch')
+          throw new Error('Invalid credentials')
+        }
+
+        console.log('Auth successful for:', user.email)
         return {
           id: user._id.toString(),
           email: user.email,
@@ -97,6 +111,7 @@ export const config = {
     strategy: 'jwt',
   },
   secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === 'development',
 } satisfies NextAuthConfig
 
 export const { handlers, auth, signIn, signOut } = NextAuth(config)
