@@ -40,7 +40,7 @@ import {
   AddRegular,
   SearchRegular,
   BugRegular,
-  TaskListRegular,
+  TaskListAddRegular,
   PersonRegular,
   CalendarRegular,
 } from '@fluentui/react-icons'
@@ -182,11 +182,11 @@ export default function IssuesPage() {
     const config = {
       bug: { color: 'danger', icon: <BugRegular /> },
       story: { color: 'success', icon: <PersonRegular /> },
-      task: { color: 'brand', icon: <TaskListRegular /> },
+      task: { color: 'brand', icon: <TaskListAddRegular /> },
       epic: { color: 'important', icon: <CalendarRegular /> },
-      improvement: { color: 'warning', icon: <TaskListRegular /> },
-      sub_task: { color: 'subtle', icon: <TaskListRegular /> },
-    }[type] || { color: 'brand', icon: <TaskListRegular /> }
+      improvement: { color: 'warning', icon: <TaskListAddRegular /> },
+      sub_task: { color: 'subtle', icon: <TaskListAddRegular /> },
+    }[type] || { color: 'brand', icon: <TaskListAddRegular /> }
 
     return <Badge appearance={config.color as any} icon={config.icon}>{type.replace('_', ' ')}</Badge>
   }
