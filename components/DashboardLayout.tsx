@@ -21,7 +21,7 @@ import {
 } from '@fluentui/react-components'
 import {
   BoardRegular,
-  TaskListRegular,
+  TaskListAddRegular,
   PeopleRegular,
   SettingsRegular,
   SignOutRegular,
@@ -100,7 +100,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const navItems = [
     { id: 'dashboard', icon: <HomeRegular />, label: 'Dashboard', href: '/dashboard' },
     { id: 'board', icon: <BoardRegular />, label: 'Board', href: '/board' },
-    { id: 'issues', icon: <TaskListRegular />, label: 'Issues', href: '/issues' },
+    { id: 'issues', icon: <TaskListAddRegular />, label: 'Issues', href: '/issues' },
     { id: 'team', icon: <PeopleRegular />, label: 'Team', href: '/team' },
     { id: 'projects', icon: <AppsRegular />, label: 'Projects', href: '/projects' },
   ]

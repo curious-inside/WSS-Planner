@@ -24,7 +24,7 @@ import {
   Link,
 } from '@fluentui/react-components'
 import {
-  TaskListRegular,
+  TaskListAddRegular,
   PersonRegular,
   CheckmarkCircleRegular,
   ClockRegular,
@@ -210,7 +210,7 @@ export default function DashboardPage() {
         <div className={styles.grid}>
           <Card className={styles.statsCard}>
             <div className={styles.cardHeader}>
-              <TaskListRegular />
+              <TaskListAddRegular />
               <Text size={400} weight="semibold">Total Issues</Text>
             </div>
             <div className={styles.statValue}>{stats.total}</div>
