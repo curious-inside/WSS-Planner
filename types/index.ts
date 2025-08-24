@@ -11,7 +11,7 @@ export type BoardType = 'kanban' | 'scrum'
 export type SprintStatus = 'planned' | 'active' | 'completed'
 
 export interface IUser {
-  _id?: string
+  _id: string
   email: string
   password?: string
   name: string
@@ -26,7 +26,7 @@ export interface IUser {
 }
 
 export interface IOrganization {
-  _id?: string
+  _id: string
   name: string
   slug: string
   description?: string
@@ -43,7 +43,7 @@ export interface IOrganization {
 }
 
 export interface IProject {
-  _id?: string
+  _id: string
   name: string
   key: string
   description?: string
@@ -64,16 +64,16 @@ export interface IProject {
 }
 
 export interface IIssue {
-  _id?: string
+  _id: string
   key: string
   title: string
   description?: string
   type: IssueType
   status: IssueStatus
   priority: IssuePriority
-  projectId: string
-  reporterId: string
-  assigneeId?: string
+  projectId: IProject | string
+  reporterId: IUser | string
+  assigneeId?: IUser | string
   epicId?: string
   sprintId?: string
   labels: string[]

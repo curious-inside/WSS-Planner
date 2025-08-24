@@ -2,6 +2,7 @@
 
 import { SessionProvider } from 'next-auth/react'
 import { FluentProvider, webLightTheme } from '@fluentui/react-components'
+import { ProjectProvider } from '@/contexts/ProjectContext'
 
 interface ProvidersProps {
   children: React.ReactNode
@@ -10,9 +11,11 @@ interface ProvidersProps {
 export default function Providers({ children }: ProvidersProps) {
   return (
     <SessionProvider>
-      <FluentProvider theme={webLightTheme}>
-        {children}
-      </FluentProvider>
+      <ProjectProvider>
+        <FluentProvider theme={webLightTheme}>
+          {children}
+        </FluentProvider>
+      </ProjectProvider>
     </SessionProvider>
   )
 }
